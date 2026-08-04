@@ -15,6 +15,32 @@ if(isset($_POST['save'])){
     $installation_date = $_POST['installation_date'];
     $status = $_POST['status'];
 
+// Generate next Asset Number
+
+$query = mysqli_query($conn, "
+    SELECT asset_number
+    FROM machines
+    ORDER BY asset_number DESC
+    LIMIT 1
+");
+
+if(mysqli_num_rows($query) > 0){
+
+    $row = mysqli_fetch_assoc($query);
+
+    // Example: G3-015 -> 15
+    $last_number = (int) substr($row['asset_number'], 3);
+
+    $next_number = $last_number + 1;
+
+}else{
+
+    $next_number = 1;
+
+}
+
+$asset_number = "G3-" . str_pad($next_number, 3, "0", STR_PAD_LEFT);
+
     $sql = "INSERT INTO machines
     (customer_id, asset_number, brand, machine_model, machine_type,
      serial_number, ip_address, location, installation_date, status)

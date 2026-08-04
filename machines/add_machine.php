@@ -34,10 +34,6 @@ $customers = mysqli_query($conn, "SELECT id, customer_name FROM customers ORDER 
 
 </select>
 
-<br><br>
-
-<label>Asset Number</label><br>
-<input type="text" name="asset_number">
 
 <br><br>
 

@@ -28,8 +28,9 @@ $row = mysqli_fetch_assoc($result);
 
 <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
 
-<label>Asset Number</label><br>
-<input type="text" name="asset_number" value="<?php echo $row['asset_number']; ?>">
+<label>Asset Number</label>
+
+<input type="text" value="<?php echo $row['asset_number']; ?>" readonly>
 
 <br><br>
 
