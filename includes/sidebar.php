@@ -19,6 +19,8 @@
         <li><a href="../customers/view_customers.php">👥 Customers</a></li>
 
         <li><a href="../machines/view_machines.php">🖨️ Machines</a></li>
+        
+        <li><a href="../technicians/view_technicians.php">👨‍🔧 Technicians</a></li>
 
         <li><a href="../service_requests/view_requests.php">🛠️ Service Requests</a></li>
 

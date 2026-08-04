@@ -61,7 +61,7 @@ $result = mysqli_query($conn, $sql);
 <table border="1" cellpadding="10" cellspacing="0" width="100%">
 
 <tr>
-    <th>CustomersNo.</th>
+    <th>Cust-No.</th>
     <th>Customer Name</th>
     <th>Company</th>
     <th>Phone</th>
