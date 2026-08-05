@@ -385,3 +385,61 @@ textarea:focus{
     }
 
 }
+/* ==========================
+   BADGES
+========================== */
+
+.badge{
+    display:inline-block;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:bold;
+    color:#fff;
+    text-align:center;
+}
+
+.badge-high{
+    background:#dc3545;
+}
+
+.badge-medium{
+    background:#f39c12;
+}
+
+.badge-low{
+    background:#28a745;
+}
+
+.badge-pending{
+    background:#ffc107;
+    color:#000;
+}
+
+.badge-progress{
+    background:#0d6efd;
+}
+
+.badge-completed{
+    background:#198754;
+}
+/* Dashboard Cards */
+
+.card-link{
+    text-decoration:none;
+    color:inherit;
+}
+
+.card-link:hover{
+    text-decoration:none;
+}
+
+.card-link .card{
+    transition:0.3s;
+    cursor:pointer;
+}
+
+.card-link .card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 10px 20px rgba(0,0,0,0.25);
+}
