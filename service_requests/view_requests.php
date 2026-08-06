@@ -218,6 +218,10 @@ class="btn btn-edit">
 
 </a>
 
+<a href="../job_cards/generate_job_card.php?id=<?php echo $row['id']; ?>" class="btn btn-add">
+    📋 Generate
+</a>
+
 <a
 href="delete_request.php?id=<?php echo $row['id'];?>"
 class="btn btn-delete"
