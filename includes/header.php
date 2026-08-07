@@ -11,6 +11,7 @@ if (session_status() == PHP_SESSION_NONE) {
     <title>G3 Service Management System</title>
 
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/print.css">
 </head>
 
 <body>

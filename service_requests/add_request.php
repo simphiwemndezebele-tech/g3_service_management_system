@@ -9,6 +9,7 @@ if (!isset($_SESSION['username'])) {
 include("../config/db.php");
 include("../includes/header.php");
 include("../includes/sidebar.php");
+include("../includes/status_badge.php");
 
 // Load Customers
 $customers = mysqli_query($conn, "SELECT id, customer_name FROM customers ORDER BY customer_name ASC");

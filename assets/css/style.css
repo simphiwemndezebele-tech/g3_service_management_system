@@ -506,3 +506,59 @@ color:#003366;
 .completed-count{
     color:#198754;
 }
+@media print{
+
+.sidebar,
+.header,
+.btn,
+form{
+
+display:none;
+
+}
+
+.main-content{
+
+margin:0;
+padding:0;
+
+}
+
+body{
+
+background:white;
+
+}
+
+table{
+
+box-shadow:none;
+
+}
+
+}
+.badge{
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:bold;
+    color:white;
+    display:inline-block;
+}
+
+.badge-success{
+    background:#28a745;
+}
+
+.badge-warning{
+    background:#ffc107;
+    color:#000;
+}
+
+.badge-primary{
+    background:#007bff;
+}
+
+.badge-danger{
+    background:#dc3545;
+}

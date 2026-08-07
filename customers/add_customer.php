@@ -8,6 +8,7 @@ if (!isset($_SESSION['username'])) {
 
 include("../includes/header.php");
 include("../includes/sidebar.php");
+include("../includes/status_badge.php");
 ?>
 
 <div class="main-content">
