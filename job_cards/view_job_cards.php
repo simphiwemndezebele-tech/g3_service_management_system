@@ -22,46 +22,62 @@ if(isset($_GET['search'])){
     $search = mysqli_real_escape_string($conn,$_GET['search']);
 }
 
-/* Query */
+/* ==============================
+   Job Card Query
+   ============================== */
 
 $sql = "
 SELECT
-
-job_cards.*,
-
-customers.customer_name,
-
-machines.asset_number,
-
-machines.machine_model,
-
-technicians.full_name AS technician_name
+    job_cards.*,
+    customers.customer_name,
+    machines.asset_number,
+    machines.machine_model,
+    technicians.full_name AS technician_name
 
 FROM job_cards
 
 INNER JOIN customers
-ON job_cards.customer_id = customers.id
+    ON job_cards.customer_id = customers.id
 
 INNER JOIN machines
-ON job_cards.machine_id = machines.id
+    ON job_cards.machine_id = machines.id
 
 INNER JOIN technicians
-ON job_cards.technician_id = technicians.id
+    ON job_cards.technician_id = technicians.id
 
 WHERE
-
-job_card_number LIKE '%$search%'
-
-OR customers.customer_name LIKE '%$search%'
-
-OR machines.asset_number LIKE '%$search%'
-
-OR technicians.full_name LIKE '%$search%'
-
-ORDER BY job_cards.id DESC
+(
+    job_cards.job_card_number LIKE '%$search%'
+    OR customers.customer_name LIKE '%$search%'
+    OR machines.asset_number LIKE '%$search%'
+    OR technicians.full_name LIKE '%$search%'
+)
 ";
 
-$result = mysqli_query($conn,$sql);
+/* ==============================
+   Technician Security
+   ============================== */
+
+if ($_SESSION['role'] === 'Technician') {
+
+    $user_id = intval($_SESSION['user_id']);
+
+    $sql .= "
+        AND technicians.user_id = $user_id
+    ";
+}
+
+/* ==============================
+   Final Ordering
+   ============================== */
+
+$sql .= " ORDER BY job_cards.id DESC";
+
+$result = mysqli_query($conn, $sql);
+
+if (!$result) {
+    die("Database error: " . mysqli_error($conn));
+}
 
 ?>
 
@@ -148,16 +164,24 @@ echo "<span style='color:green;font-weight:bold;'>🟢 Completed</span>";
 <td><?php echo $row['created_at']; ?></td>
 
 <td>
-
-<a href="edit_job_card.php?id=<?php echo $row['id']; ?>" class="btn btn-edit">
+<a href="edit_job_card.php?id=<?php echo $row['id']; ?>"
+class="btn btn-edit">
 Edit
 </a>
+
+
+<?php if ($_SESSION['role'] === 'Manager') { ?>
 
 <a href="delete_job_card.php?id=<?php echo $row['id']; ?>"
 class="btn btn-delete"
 onclick="return confirm('Delete this Job Card?');">
 Delete
 </a>
+
+<td>
+<?php } ?>
+
+</td>
 
 </td>
 

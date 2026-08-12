@@ -14,10 +14,78 @@ include("../includes/header.php");
 include("../includes/sidebar.php");
 include("../includes/status_badge.php");
 
-$id = $_GET['id'];
+$id = intval($_GET['id'] ?? 0);
 
-$sql = "SELECT * FROM job_cards WHERE id='$id'";
-$result = mysqli_query($conn,$sql);
+if ($id <= 0) {
+    header("Location: view_job_cards.php");
+    exit();
+}
+
+
+/* ==============================
+   Technician Security
+   ============================== */
+
+if ($_SESSION['role'] === 'Technician') {
+
+    $user_id = intval($_SESSION['user_id']);
+
+    $security_stmt = mysqli_prepare(
+        $conn,
+        "SELECT job_cards.id
+         FROM job_cards
+         INNER JOIN technicians
+             ON job_cards.technician_id = technicians.id
+         WHERE job_cards.id = ?
+         AND technicians.user_id = ?"
+    );
+
+    mysqli_stmt_bind_param(
+        $security_stmt,
+        "ii",
+        $id,
+        $user_id
+    );
+
+    mysqli_stmt_execute($security_stmt);
+
+    $security_result = mysqli_stmt_get_result($security_stmt);
+
+    if (mysqli_num_rows($security_result) === 0) {
+
+        header("Location: view_job_cards.php");
+        exit();
+
+    }
+}
+
+
+/* ==============================
+   Get Job Card
+   ============================== */
+
+$stmt = mysqli_prepare(
+    $conn,
+    "SELECT * FROM job_cards WHERE id = ?"
+);
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "i",
+    $id
+);
+
+mysqli_stmt_execute($stmt);
+
+$result = mysqli_stmt_get_result($stmt);
+
+if (mysqli_num_rows($result) === 0) {
+
+    header("Location: view_job_cards.php");
+    exit();
+
+}
+
 $row = mysqli_fetch_assoc($result);
 ?>
 
@@ -32,7 +100,7 @@ $row = mysqli_fetch_assoc($result);
 <label>Job Card Number</label>
 
 <input type="text"
-value="<?php echo $row['job_card_number']; ?>"
+value="<?php echo htmlspecialchars($row['job_card_number']); ?>"
 readonly>
 
 <br><br>
@@ -41,7 +109,7 @@ readonly>
 
 <textarea
 name="work_done"
-rows="6"><?php echo $row['work_done']; ?></textarea>
+rows="6"><?php echo htmlspecialchars($row['work_done']); ?></textarea>
 
 <br><br>
 
@@ -49,7 +117,7 @@ rows="6"><?php echo $row['work_done']; ?></textarea>
 
 <textarea
 name="remarks"
-rows="5"><?php echo $row['remarks']; ?></textarea>
+rows="5"><?php echo htmlspecialchars($row['remarks']); ?></textarea>
 
 <br><br>
 
