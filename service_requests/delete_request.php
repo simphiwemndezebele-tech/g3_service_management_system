@@ -1,4 +1,8 @@
 <?php
+session_start();
+
+require_once("../includes/permissions.php");
+requireRole(['Manager', 'Reception', 'Technician']);
 
 include("../config/db.php");
 

@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+require_once("../includes/permissions.php");
+requireRole(['Manager', 'Reception', 'Technician']);
+
 if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");
     exit();
@@ -12,6 +15,39 @@ include("../includes/sidebar.php");
 include("../includes/status_badge.php");
 
 $id = $_GET['id'];
+// Technician security check
+if ($_SESSION['role'] === 'Technician') {
+
+    $user_id = $_SESSION['user_id'];
+
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT sr.id
+         FROM service_requests sr
+         INNER JOIN technicians t
+         ON sr.technician_id = t.id
+         WHERE sr.id = ?
+         AND t.user_id = ?"
+    );
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        "ii",
+        $id,
+        $user_id
+    );
+
+    mysqli_stmt_execute($stmt);
+
+    $security_result = mysqli_stmt_get_result($stmt);
+
+    if (mysqli_num_rows($security_result) === 0) {
+
+        header("Location: view_requests.php");
+        exit();
+
+    }
+}
 
 $sql = "SELECT * FROM service_requests WHERE id=?";
 $stmt = mysqli_prepare($conn,$sql);
@@ -94,20 +130,56 @@ $technicians=mysqli_query($conn,"SELECT * FROM technicians ORDER BY full_name");
 
 <label>Technician</label>
 
-<select name="technician_id">
+<?php if ($_SESSION['role'] === 'Technician') { ?>
 
-<?php while($t=mysqli_fetch_assoc($technicians)){ ?>
+    <!-- Technician cannot change the assigned technician -->
 
-<option value="<?php echo $t['id']; ?>"
-<?php if($request['technician_id']==$t['id']) echo "selected"; ?>>
+    <?php
+    $assigned_technician = mysqli_query(
+        $conn,
+        "SELECT full_name
+         FROM technicians
+         WHERE id=" . intval($request['technician_id'])
+    );
 
-<?php echo $t['full_name']; ?>
+    $assigned = mysqli_fetch_assoc($assigned_technician);
+    ?>
 
-</option>
+    <input
+        type="text"
+        value="<?php echo htmlspecialchars($assigned['full_name']); ?>"
+        readonly
+    >
+
+    <!-- Keep the technician ID so the request remains assigned correctly -->
+    <input
+        type="hidden"
+        name="technician_id"
+        value="<?php echo intval($request['technician_id']); ?>"
+    >
+
+<?php } else { ?>
+
+    <!-- Manager and Reception can reassign technicians -->
+
+    <select name="technician_id">
+
+        <?php while($t=mysqli_fetch_assoc($technicians)){ ?>
+
+            <option
+                value="<?php echo $t['id']; ?>"
+                <?php if($request['technician_id']==$t['id']) echo "selected"; ?>
+            >
+
+                <?php echo htmlspecialchars($t['full_name']); ?>
+
+            </option>
+
+        <?php } ?>
+
+    </select>
 
 <?php } ?>
-
-</select>
 
 <br><br>
 

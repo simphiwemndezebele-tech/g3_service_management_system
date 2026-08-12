@@ -1,5 +1,7 @@
 <?php
 session_start();
+require_once("../includes/permissions.php");
+requireRole(['Manager']);
 
 if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");

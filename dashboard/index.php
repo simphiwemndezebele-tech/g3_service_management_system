@@ -40,6 +40,10 @@ $progress_requests = mysqli_fetch_assoc(
 $completed_requests = mysqli_fetch_assoc(
     mysqli_query($conn, "SELECT COUNT(*) AS total FROM service_requests WHERE status='Completed'")
 );
+$total_requests = mysqli_fetch_assoc(
+    mysqli_query($conn,
+    "SELECT COUNT(*) AS total FROM service_requests")
+);
 
 // Recent Service Requests
 $recent_requests = mysqli_query($conn, "
@@ -78,6 +82,15 @@ ORDER BY id DESC
 LIMIT 5
 
 ");
+// Requests by Status
+$pending = mysqli_fetch_assoc(mysqli_query($conn,
+"SELECT COUNT(*) AS total FROM service_requests WHERE status='Pending'"));
+
+$progress = mysqli_fetch_assoc(mysqli_query($conn,
+"SELECT COUNT(*) AS total FROM service_requests WHERE status='In Progress'"));
+
+$completed = mysqli_fetch_assoc(mysqli_query($conn,
+"SELECT COUNT(*) AS total FROM service_requests WHERE status='Completed'"));
 ?>
 
 <div class="main-content">
@@ -132,6 +145,26 @@ LIMIT 5
 </a>
 
 </div>
+<hr><br>
+
+<div style="display:flex;justify-content:center;gap:30px;flex-wrap:wrap;margin-top:20px;">
+
+    <div class="card" style="flex:1;min-width:500px;max-width:650px;padding:20px;">
+        <h3>System Overview</h3>
+        <div style="height:300px;">
+    <canvas id="overviewChart"></canvas>
+</div>
+    </div>
+
+   <div class="card" style="flex:1;min-width:500px;max-width:650px;padding:20px;">
+        <h3>Service Requests Status</h3>
+       <div style="height:300px;">
+    <canvas id="requestChart"></canvas>
+</div>
+    </div>
+
+</div>
+
 <div class="dashboard-sections">
 
 <div class="dashboard-box">
@@ -205,3 +238,71 @@ LIMIT 5
 <?php
 include("../includes/footer.php");
 ?>
+<script>
+
+// Doughnut Chart
+new Chart(document.getElementById('overviewChart'),{
+
+    type:'doughnut',
+
+    data:{
+        labels:['Customers','Machines','Technicians','Requests'],
+        datasets:[{
+            data:[
+                <?php echo $total_customers['total']; ?>,
+                <?php echo $total_machines['total']; ?>,
+                <?php echo $total_technicians['total']; ?>,
+                <?php echo $total_requests['total']; ?>
+            ]
+        }]
+    },
+
+    options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{
+            legend:{
+                position:'bottom'
+            }
+        }
+    }
+
+});
+
+// Bar Chart
+
+new Chart(document.getElementById('requestChart'),{
+
+    type:'bar',
+
+    data:{
+        labels:['Pending','In Progress','Completed'],
+        datasets:[{
+            label:'Requests',
+            data:[
+                <?php echo $pending['total']; ?>,
+                <?php echo $progress['total']; ?>,
+                <?php echo $completed['total']; ?>
+            ],
+            borderWidth:1
+        }]
+    },
+
+    options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        scales:{
+            y:{
+                beginAtZero:true
+            }
+        },
+        plugins:{
+            legend:{
+                display:false
+            }
+        }
+    }
+
+});
+
+</script>

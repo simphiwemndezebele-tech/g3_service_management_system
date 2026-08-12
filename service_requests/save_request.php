@@ -1,11 +1,45 @@
 <?php
 session_start();
+
+require_once("../includes/permissions.php");
+requireRole(['Manager', 'Reception', 'Technician']);
+
 include("../config/db.php");
 
 // Receive Form Data
 $customer_id = $_POST['customer_id'];
 $machine_id = $_POST['machine_id'];
 $technician_id = $_POST['technician_id'];
+
+
+// Technician security
+if ($_SESSION['role'] === 'Technician') {
+
+    $user_id = $_SESSION['user_id'];
+
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT id
+         FROM technicians
+         WHERE user_id = ?"
+    );
+
+    mysqli_stmt_bind_param($stmt, "i", $user_id);
+    mysqli_stmt_execute($stmt);
+
+    $tech_result = mysqli_stmt_get_result($stmt);
+
+    if ($tech = mysqli_fetch_assoc($tech_result)) {
+
+        // Force the request to belong to the logged-in technician
+        $technician_id = $tech['id'];
+
+    } else {
+
+        die("Your technician account is not linked to a technician record.");
+
+    }
+}
 $issue_description = $_POST['issue_description'];
 $priority = $_POST['priority'];
 $status = $_POST['status'];

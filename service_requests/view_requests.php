@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+require_once("../includes/permissions.php");
+requireRole(['Manager', 'Reception', 'Technician']);
+
 if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");
     exit();
@@ -12,10 +15,30 @@ include("../includes/sidebar.php");
 include("../includes/status_badge.php");
 
 $search = "";
+$technician_id = null;
+
+if ($_SESSION['role'] === 'Technician') {
+
+    $user_id = $_SESSION['user_id'];
+
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT id FROM technicians WHERE user_id = ?"
+    );
+
+    mysqli_stmt_bind_param($stmt, "i", $user_id);
+    mysqli_stmt_execute($stmt);
+
+    $tech_result = mysqli_stmt_get_result($stmt);
+
+    if ($tech = mysqli_fetch_assoc($tech_result)) {
+        $technician_id = $tech['id'];
+    }
+}
 
 if(isset($_GET['search'])){
 
-    $search = mysqli_real_escape_string($conn,$_GET['search']);
+    $search = mysqli_real_escape_string($conn, $_GET['search']);
 
     $sql = "SELECT
                 sr.*,
@@ -35,21 +58,37 @@ if(isset($_GET['search'])){
             INNER JOIN technicians t
             ON sr.technician_id=t.id
 
-            WHERE
+            WHERE (
 
-            sr.request_number LIKE '%$search%'
+                sr.request_number LIKE '%$search%'
 
-            OR c.customer_name LIKE '%$search%'
+                OR c.customer_name LIKE '%$search%'
 
-            OR m.asset_number LIKE '%$search%'
+                OR m.asset_number LIKE '%$search%'
 
-            OR m.machine_model LIKE '%$search%'
+                OR m.machine_model LIKE '%$search%'
 
-            OR t.full_name LIKE '%$search%'
+                OR t.full_name LIKE '%$search%'
 
-            OR sr.status LIKE '%$search%'
+                OR sr.status LIKE '%$search%'
 
-            ORDER BY sr.id DESC";
+            )";
+
+    // Technician can only search within their own requests
+    if ($_SESSION['role'] === 'Technician') {
+
+        if ($technician_id !== null) {
+
+            $sql .= " AND sr.technician_id = " . intval($technician_id);
+
+        } else {
+
+            // No technician record linked to this account
+            $sql .= " AND 1=0";
+        }
+    }
+
+    $sql .= " ORDER BY sr.id DESC";
 
 }else{
 
@@ -71,7 +110,23 @@ if(isset($_GET['search'])){
             INNER JOIN technicians t
             ON sr.technician_id=t.id
 
-            ORDER BY sr.id DESC";
+            WHERE 1=1";
+
+    // Technician can only see requests assigned to themselves
+    if ($_SESSION['role'] === 'Technician') {
+
+        if ($technician_id !== null) {
+
+            $sql .= " AND sr.technician_id = " . intval($technician_id);
+
+        } else {
+
+            // No technician record linked to this account
+            $sql .= " AND 1=0";
+        }
+    }
+
+    $sql .= " ORDER BY sr.id DESC";
 
 }
 

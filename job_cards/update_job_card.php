@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+require_once("../includes/permissions.php");
+requireRole(['Manager', 'Technician']);
+
 include("../config/db.php");
 
 $id = $_POST['id'];
