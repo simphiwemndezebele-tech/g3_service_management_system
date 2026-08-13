@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+require_once("../includes/permissions.php");
+requireRole(['Manager', 'Reception']);
+
 if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");
     exit();
@@ -57,13 +60,17 @@ Clear
 
 <br>
 
+<?php if ($_SESSION['role'] === 'Manager') { ?>
+
 <p>
 
 <a href="add_technician.php" class="btn btn-add">
-+ Add Technician
+    + Add Technician
 </a>
 
 </p>
+
+<?php } ?>
 
 <table>
 
@@ -104,9 +111,12 @@ while($row=mysqli_fetch_assoc($result))
 
 <td>
 
-<a href="edit_technician.php?id=<?php echo $row['id']; ?>" class="btn btn-edit">
+<?php if ($_SESSION['role'] === 'Manager') { ?>
 
-✏️ Edit
+<a href="edit_technician.php?id=<?php echo $row['id']; ?>"
+class="btn btn-edit">
+
+    ✏️ Edit
 
 </a>
 
@@ -114,9 +124,15 @@ while($row=mysqli_fetch_assoc($result))
 class="btn btn-delete"
 onclick="return confirm('Delete this technician?')">
 
-🗑️ Delete
+    🗑️ Delete
 
 </a>
+
+<?php } else { ?>
+
+<span>View Only</span>
+
+<?php } ?>
 
 </td>
 

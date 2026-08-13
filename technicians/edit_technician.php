@@ -1,5 +1,9 @@
 <?php
+
 session_start();
+
+require_once("../includes/permissions.php");
+requireRole(['Manager']);
 
 if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");
@@ -11,7 +15,12 @@ include("../includes/header.php");
 include("../includes/sidebar.php");
 include("../includes/status_badge.php");
 
-$id = $_GET['id'];
+$id = intval($_GET['id'] ?? 0);
+
+if ($id <= 0) {
+    header("Location: view_technicians.php");
+    exit();
+}
 
 $sql = "SELECT * FROM technicians WHERE id = ?";
 $stmt = mysqli_prepare($conn, $sql);
