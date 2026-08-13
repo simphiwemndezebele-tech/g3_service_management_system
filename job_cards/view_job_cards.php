@@ -166,7 +166,7 @@ echo "<span style='color:green;font-weight:bold;'>🟢 Completed</span>";
 <td>
 <a href="edit_job_card.php?id=<?php echo $row['id']; ?>"
 class="btn btn-edit">
-Edit
+✏️Edit
 </a>
 
 
@@ -174,7 +174,7 @@ Edit
 
 <a href="delete_job_card.php?id=<?php echo $row['id']; ?>"
 class="btn btn-delete"
-onclick="return confirm('Delete this Job Card?');">
+onclick="return confirm('Delete this Job Card?');">🗑️
 Delete
 </a>
 

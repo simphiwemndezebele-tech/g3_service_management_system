@@ -91,15 +91,23 @@ $number = 1;
 
 <td>
 
+<?php if ($_SESSION['role'] === 'Manager' || $_SESSION['role'] === 'Reception') { ?>
+
 <a href="edit_customer.php?id=<?php echo $row['id']; ?>" class="btn btn-edit">
-Edit
-</a> |
+    ✏️ Edit
+</a>
+
+<?php } ?>
+
+<?php if ($_SESSION['role'] === 'Manager') { ?>
 
 <a href="delete_customer.php?id=<?php echo $row['id']; ?>"
 class="btn btn-delete"
 onclick="return confirm('Delete this customer?');">
-Delete
+    🗑️ Delete
 </a>
+
+<?php } ?>
 
 </td>
 
