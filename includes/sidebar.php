@@ -5,7 +5,22 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once(__DIR__ . "/permissions.php");
+
+include_once(__DIR__ . "/../config/db.php");
+
 $role = $_SESSION['role'] ?? '';
+
+/* Load Company Name */
+
+$settings_result = mysqli_query(
+    $conn,
+    "SELECT company_name FROM settings WHERE id=1"
+);
+
+$settings = mysqli_fetch_assoc($settings_result);
+
+$company_name = $settings['company_name'] ?? 'G3 Systems';
+
 ?>
 
 <div class="sidebar">
@@ -14,7 +29,7 @@ $role = $_SESSION['role'] ?? '';
 
         <img src="../assets/images/logo.png" alt="G3 Logo" class="logo">
 
-        <h2>G3 Systems</h2>
+       <h2><?php echo htmlspecialchars($company_name); ?></h2>
 
         <p>Service Management System</p>
 
@@ -67,21 +82,27 @@ $role = $_SESSION['role'] ?? '';
 
 
     <!-- Manager only -->
-    <?php if ($role === 'Manager'): ?>
+<?php if ($role === 'Manager'): ?>
 
-        <li>
-            <a href="../technicians/view_technicians.php">
-                👨‍🔧 Technicians
-            </a>
-        </li>
+    <li>
+        <a href="../technicians/view_technicians.php">
+            👨‍🔧 Technicians
+        </a>
+    </li>
 
-        <li>
-            <a href="../reports/index.php">
-                📊 Reports
-            </a>
-        </li>
+    <li>
+        <a href="../reports/index.php">
+            📊 Reports
+        </a>
+    </li>
 
-    <?php endif; ?>
+    <li>
+        <a href="../settings/index.php">
+            ⚙️ Settings
+        </a>
+    </li>
+
+<?php endif; ?>
 
 
     <!-- Everyone -->

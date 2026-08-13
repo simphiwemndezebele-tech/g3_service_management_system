@@ -9,6 +9,15 @@ if (!isset($_SESSION['username'])) {
 }
 
 include("../config/db.php");
+/* Load Company Settings */
+
+$settings_result = mysqli_query($conn, "SELECT * FROM settings WHERE id=1");
+$settings = mysqli_fetch_assoc($settings_result);
+
+$company_name = $settings['company_name'] ?? "G3 Systems";
+$company_phone = $settings['company_phone'] ?? "";
+$company_email = $settings['company_email'] ?? "";
+$company_address = $settings['company_address'] ?? "";
 include("../includes/header.php");
 include("../includes/sidebar.php");
 include("../includes/status_badge.php");
@@ -50,9 +59,21 @@ $totalMachines = mysqli_fetch_assoc($total);
 
 <img src="../assets/images/logo.png">
 
-<h2>G3 SYSTEMS</h2>
+<h2><?php echo htmlspecialchars($company_name); ?></h2>
 
 <h3>Service Management System</h3>
+
+<?php if($company_phone != ""): ?>
+<p>📞 <?php echo htmlspecialchars($company_phone); ?></p>
+<?php endif; ?>
+
+<?php if($company_email != ""): ?>
+<p>✉️ <?php echo htmlspecialchars($company_email); ?></p>
+<?php endif; ?>
+
+<?php if($company_address != ""): ?>
+<p>📍 <?php echo htmlspecialchars($company_address); ?></p>
+<?php endif; ?>
 
 <hr>
 
