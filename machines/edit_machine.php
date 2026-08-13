@@ -2,7 +2,7 @@
 session_start();
 
 require_once("../includes/permissions.php");
-requireRole(['Manager', 'Reception', 'Technician']);
+requireRole(['Manager', 'Reception']);
 
 if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");
@@ -14,7 +14,12 @@ include("../includes/header.php");
 include("../includes/sidebar.php");
 include("../includes/status_badge.php");
 
-$id = $_GET['id'];
+$id = intval($_GET['id'] ?? 0);
+
+if ($id <= 0) {
+    header("Location: view_machines.php");
+    exit();
+}
 
 $stmt = mysqli_prepare($conn, "SELECT * FROM machines WHERE id=?");
 mysqli_stmt_bind_param($stmt, "i", $id);

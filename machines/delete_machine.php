@@ -3,7 +3,9 @@
 session_start();
 
 require_once("../includes/permissions.php");
-requireRole(['Manager', 'Reception', 'Technician']);
+
+/* Manager ONLY */
+requireRole(['Manager']);
 
 if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");
@@ -12,21 +14,44 @@ if (!isset($_SESSION['username'])) {
 
 include("../config/db.php");
 
-$id = $_GET['id'];
 
-$stmt = mysqli_prepare($conn,
-"DELETE FROM machines WHERE id=?");
+/* ==============================
+   Get Machine ID
+   ============================== */
 
-mysqli_stmt_bind_param($stmt,"i",$id);
+$id = intval($_GET['id'] ?? 0);
 
-if(mysqli_stmt_execute($stmt)){
+if ($id <= 0) {
+    header("Location: view_machines.php");
+    exit();
+}
 
-header("Location: view_machines.php");
-exit();
 
-}else{
+/* ==============================
+   Delete Machine
+   ============================== */
 
-echo mysqli_error($conn);
+$stmt = mysqli_prepare(
+    $conn,
+    "DELETE FROM machines WHERE id = ?"
+);
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "i",
+    $id
+);
+
+
+if (mysqli_stmt_execute($stmt)) {
+
+    header("Location: view_machines.php");
+    exit();
+
+} else {
+
+    echo "Error deleting machine: " . mysqli_error($conn);
 
 }
+
 ?>

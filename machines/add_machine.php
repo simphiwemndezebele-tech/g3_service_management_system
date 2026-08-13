@@ -2,7 +2,7 @@
 session_start();
 
 require_once("../includes/permissions.php");
-requireRole(['Manager', 'Reception', 'Technician']);
+requireRole(['Manager', 'Reception']);
 
 if (!isset($_SESSION['username'])) {
     header("Location: ../auth/login.php");

@@ -2,11 +2,18 @@
 session_start();
 
 require_once("../includes/permissions.php");
-requireRole(['Manager', 'Reception', 'Technician']);
+requireRole(['Manager', 'Reception']);
 
 include("../config/db.php");
 
 if(isset($_POST['update'])){
+
+    $id = intval($_POST['id'] ?? 0);
+
+    if($id <= 0){
+        header("Location: view_machines.php");
+        exit();
+    }
 
 $stmt = mysqli_prepare($conn,
 

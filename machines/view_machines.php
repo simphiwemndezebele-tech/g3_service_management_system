@@ -73,9 +73,13 @@ $result = mysqli_query($conn, $sql);
 <br>
 
 <p>
-     <a href="add_machine.php" class="btn btn-add">
-+ Add New Machine
+<?php if ($_SESSION['role'] === 'Manager' || $_SESSION['role'] === 'Reception') { ?>
+
+<a href="add_machine.php" class="btn btn-add">
+    + Add New Machine
 </a>
+
+<?php } ?>
 </p>
 
 <table border="1" cellpadding="10" cellspacing="0" width="100%">
@@ -108,15 +112,24 @@ $result = mysqli_query($conn, $sql);
 
 <td>
 
-<a href="edit_machine.php?id=<?php echo $row['id']; ?>" class="btn btn-edit">✏️
-Edit
-</a> |
+<?php if ($_SESSION['role'] === 'Manager' || $_SESSION['role'] === 'Reception') { ?>
+
+<a href="edit_machine.php?id=<?php echo $row['id']; ?>"
+class="btn btn-edit">
+    ✏️ Edit
+</a>
+
+<?php } ?>
+
+<?php if ($_SESSION['role'] === 'Manager') { ?>
 
 <a href="delete_machine.php?id=<?php echo $row['id']; ?>"
 class="btn btn-delete"
-onclick="return confirm('Delete this machine?');">🗑️
-Delete
+onclick="return confirm('Delete this machine?');">
+    🗑️ Delete
 </a>
+
+<?php } ?>
 
 </td>
 
