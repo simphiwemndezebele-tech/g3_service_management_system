@@ -147,6 +147,9 @@ Completed
 <button class="btn btn-add">
 Save Changes
 </button>
+<a href="view_job_cards.php" class="btn btn-delete">
+    Cancel
+</a>
 
 </form>
 

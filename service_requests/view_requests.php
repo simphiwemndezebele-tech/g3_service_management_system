@@ -15,11 +15,18 @@ include("../includes/sidebar.php");
 include("../includes/status_badge.php");
 
 $search = "";
+$status_filter = "";
+$aging_filter = false;
 $technician_id = null;
+
+
+/* ==============================
+   Get Technician ID
+   ============================== */
 
 if ($_SESSION['role'] === 'Technician') {
 
-    $user_id = $_SESSION['user_id'];
+    $user_id = intval($_SESSION['user_id']);
 
     $stmt = mysqli_prepare(
         $conn,
@@ -32,105 +39,156 @@ if ($_SESSION['role'] === 'Technician') {
     $tech_result = mysqli_stmt_get_result($stmt);
 
     if ($tech = mysqli_fetch_assoc($tech_result)) {
-        $technician_id = $tech['id'];
+
+        $technician_id = intval($tech['id']);
+
     }
 }
 
-if(isset($_GET['search'])){
 
-    $search = mysqli_real_escape_string($conn, $_GET['search']);
+/* ==============================
+   Search
+   ============================== */
 
-    $sql = "SELECT
-                sr.*,
-                c.customer_name,
-                m.asset_number,
-                m.machine_model,
-                t.full_name
+if (isset($_GET['search'])) {
 
-            FROM service_requests sr
+    $search = mysqli_real_escape_string(
+        $conn,
+        $_GET['search']
+    );
+}
 
-            INNER JOIN customers c
-            ON sr.customer_id=c.id
 
-            INNER JOIN machines m
-            ON sr.machine_id=m.id
+/* ==============================
+   Status Filter
+   ============================== */
 
-            INNER JOIN technicians t
-            ON sr.technician_id=t.id
+if (isset($_GET['status'])) {
 
-            WHERE (
+    $allowed_statuses = [
+        'Pending',
+        'In Progress',
+        'Completed'
+    ];
 
+    if (in_array($_GET['status'], $allowed_statuses)) {
+
+        $status_filter = mysqli_real_escape_string(
+            $conn,
+            $_GET['status']
+        );
+
+    }
+}
+
+
+/* ==============================
+   Aging Filter
+   ============================== */
+
+if (isset($_GET['aging']) && $_GET['aging'] == '1') {
+
+    $aging_filter = true;
+
+}
+
+
+/* ==============================
+   Base Query
+   ============================== */
+
+$sql = "SELECT
+            sr.*,
+            c.customer_name,
+            m.asset_number,
+            m.machine_model,
+            t.full_name
+
+        FROM service_requests sr
+
+        INNER JOIN customers c
+            ON sr.customer_id = c.id
+
+        INNER JOIN machines m
+            ON sr.machine_id = m.id
+
+        INNER JOIN technicians t
+            ON sr.technician_id = t.id
+
+        WHERE 1=1";
+
+
+/* ==============================
+   Search Filter
+   ============================== */
+
+if ($search !== "") {
+
+    $sql .= " AND (
                 sr.request_number LIKE '%$search%'
-
                 OR c.customer_name LIKE '%$search%'
-
                 OR m.asset_number LIKE '%$search%'
-
                 OR m.machine_model LIKE '%$search%'
-
                 OR t.full_name LIKE '%$search%'
-
                 OR sr.status LIKE '%$search%'
-
             )";
 
-    // Technician can only search within their own requests
-    if ($_SESSION['role'] === 'Technician') {
+}
 
-        if ($technician_id !== null) {
 
-            $sql .= " AND sr.technician_id = " . intval($technician_id);
+/* ==============================
+   Status Filter
+   ============================== */
 
-        } else {
+if ($status_filter !== "") {
 
-            // No technician record linked to this account
-            $sql .= " AND 1=0";
-        }
-    }
-
-    $sql .= " ORDER BY sr.id DESC";
-
-}else{
-
-    $sql = "SELECT
-                sr.*,
-                c.customer_name,
-                m.asset_number,
-                m.machine_model,
-                t.full_name
-
-            FROM service_requests sr
-
-            INNER JOIN customers c
-            ON sr.customer_id=c.id
-
-            INNER JOIN machines m
-            ON sr.machine_id=m.id
-
-            INNER JOIN technicians t
-            ON sr.technician_id=t.id
-
-            WHERE 1=1";
-
-    // Technician can only see requests assigned to themselves
-    if ($_SESSION['role'] === 'Technician') {
-
-        if ($technician_id !== null) {
-
-            $sql .= " AND sr.technician_id = " . intval($technician_id);
-
-        } else {
-
-            // No technician record linked to this account
-            $sql .= " AND 1=0";
-        }
-    }
-
-    $sql .= " ORDER BY sr.id DESC";
+    $sql .= " AND sr.status = '$status_filter'";
 
 }
 
-$result=mysqli_query($conn,$sql);
+
+/* ==============================
+   Aging Filter
+   ============================== */
+
+if ($aging_filter) {
+
+    $sql .= " AND sr.status IN ('Pending', 'In Progress')
+              AND sr.request_date <
+                  DATE_SUB(CURDATE(), INTERVAL 3 DAY)";
+
+}
+
+
+/* ==============================
+   Technician Security
+   ============================== */
+
+if ($_SESSION['role'] === 'Technician') {
+
+    if ($technician_id !== null) {
+
+        $sql .= " AND sr.technician_id = "
+              . intval($technician_id);
+
+    } else {
+
+        // No technician record linked to this account
+        $sql .= " AND 1=0";
+
+    }
+
+}
+
+
+/* ==============================
+   Ordering
+   ============================== */
+
+$sql .= " ORDER BY sr.id DESC";
+
+
+$result = mysqli_query($conn, $sql);
 
 ?>
 

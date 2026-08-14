@@ -44,7 +44,26 @@ $total_requests = mysqli_fetch_assoc(
     mysqli_query($conn,
     "SELECT COUNT(*) AS total FROM service_requests")
 );
-
+// Total Job Cards
+$total_job_cards = mysqli_fetch_assoc(
+    mysqli_query($conn,
+    "SELECT COUNT(*) AS total FROM job_cards")
+);
+// Open Job Cards
+$open_job_cards = mysqli_fetch_assoc(
+    mysqli_query($conn,
+    "SELECT COUNT(*) AS total
+     FROM job_cards
+     WHERE status IN ('Open', 'In Progress')")
+);
+// Aging Service Requests
+$aging_requests = mysqli_fetch_assoc(
+    mysqli_query($conn,
+    "SELECT COUNT(*) AS total
+     FROM service_requests
+     WHERE status IN ('Pending', 'In Progress')
+     AND request_date < DATE_SUB(CURDATE(), INTERVAL 3 DAY)")
+);
 // Recent Service Requests
 $recent_requests = mysqli_query($conn, "
 
@@ -78,6 +97,30 @@ machine_model
 FROM machines
 
 ORDER BY id DESC
+
+LIMIT 5
+
+");
+// Recent Job Cards
+
+$recent_job_cards = mysqli_query($conn, "
+
+SELECT
+
+jc.job_card_number,
+c.customer_name,
+t.full_name AS technician_name,
+jc.status
+
+FROM job_cards jc
+
+LEFT JOIN customers c
+ON jc.customer_id = c.id
+
+LEFT JOIN technicians t
+ON jc.technician_id = t.id
+
+ORDER BY jc.id DESC
 
 LIMIT 5
 
@@ -116,12 +159,23 @@ $completed = mysqli_fetch_assoc(mysqli_query($conn,
     </div>
 </a>
 
+<?php if ($_SESSION['role'] === 'Manager'): ?>
+
 <a href="../technicians/view_technicians.php" class="card-link">
+
     <div class="card">
+
         <h2>👨‍🔧 Technicians</h2>
-        <h1 class="technicians-count"><?php echo $total_technicians['total']; ?></h1>
+
+        <h1 class="technicians-count">
+            <?php echo $total_technicians['total']; ?>
+        </h1>
+
     </div>
+
 </a>
+
+<?php endif; ?>
 
 <a href="../service_requests/view_requests.php?status=Pending" class="card-link">
     <div class="card">
@@ -141,6 +195,15 @@ $completed = mysqli_fetch_assoc(mysqli_query($conn,
     <div class="card">
         <h2>🟢 Completed</h2>
         <h1 class="completed-count"><?php echo $completed_requests['total']; ?></h1>
+    </div>
+</a>
+
+<a href="../job_cards/view_job_cards.php" class="card-link">
+    <div class="card">
+        <h2>📋 Job Cards</h2>
+        <h1 class="job-cards-count">
+            <?php echo $total_job_cards['total']; ?>
+        </h1>
     </div>
 </a>
 
@@ -230,6 +293,197 @@ $completed = mysqli_fetch_assoc(mysqli_query($conn,
 </table>
 
 </div>
+
+</div>
+<div class="dashboard-sections">
+
+<div class="dashboard-box">
+
+<h2>📋 Recent Job Cards</h2>
+
+<table>
+
+<tr>
+
+<th>Job Card</th>
+<th>Customer</th>
+<th>Technician</th>
+<th>Status</th>
+
+</tr>
+
+<?php
+
+if(mysqli_num_rows($recent_job_cards) > 0){
+
+    while($row = mysqli_fetch_assoc($recent_job_cards)){
+
+?>
+
+<tr>
+
+<td>
+<?php echo htmlspecialchars($row['job_card_number']); ?>
+</td>
+
+<td>
+<?php echo htmlspecialchars($row['customer_name']); ?>
+</td>
+
+<td>
+<?php echo htmlspecialchars($row['technician_name']); ?>
+</td>
+
+<td>
+<?php echo htmlspecialchars($row['status']); ?>
+</td>
+
+</tr>
+
+<?php
+
+    }
+
+}else{
+
+?>
+
+<tr>
+
+<td colspan="4" style="text-align:center;">
+
+No Job Cards Found.
+
+</td>
+
+</tr>
+
+<?php
+
+}
+
+?>
+
+</table>
+
+</div>
+
+</div>
+<!-- ==============================
+     ATTENTION REQUIRED
+================================ -->
+
+<div class="dashboard-box attention-section">
+
+    <h2>⚠️ Attention Required</h2>
+
+    <div class="attention-cards">
+
+
+        <!-- Pending Requests -->
+
+        <a href="../service_requests/view_requests.php?status=Pending"
+           class="attention-card">
+
+            <div class="attention-icon">
+                🟡
+            </div>
+
+            <div class="attention-info">
+
+                <h3>Pending Requests</h3>
+
+                <h1>
+                    <?php echo $pending_requests['total']; ?>
+                </h1>
+
+                <p>
+                    Awaiting attention
+                </p>
+
+            </div>
+
+        </a>
+
+
+
+        <!-- In Progress -->
+
+        <a href="../service_requests/view_requests.php?status=In+Progress"
+           class="attention-card">
+
+            <div class="attention-icon">
+                🔵
+            </div>
+
+            <div class="attention-info">
+
+                <h3>In Progress</h3>
+
+                <h1>
+                    <?php echo $progress_requests['total']; ?>
+                </h1>
+
+                <p>
+                    Currently being handled
+                </p>
+
+            </div>
+
+        </a>
+
+
+
+        <!-- Open Job Cards -->
+
+        <a href="../job_cards/view_job_cards.php"
+           class="attention-card">
+
+            <div class="attention-icon">
+                📋
+            </div>
+
+            <div class="attention-info">
+
+                <h3>Open Job Cards</h3>
+
+                <h1>
+                    <?php echo $open_job_cards['total']; ?>
+                </h1>
+
+                <p>
+                    Require completion
+                </p>
+
+            </div>
+
+        </a>
+
+        <a href="../service_requests/view_requests.php?aging=1"
+   class="attention-card">
+
+    <div class="attention-icon">
+        ⚠️
+    </div>
+
+    <div class="attention-info">
+
+        <h3>Aging Requests</h3>
+
+        <h1>
+            <?php echo $aging_requests['total']; ?>
+        </h1>
+
+        <p>
+            Older than 3 days
+        </p>
+
+    </div>
+
+</a>
+
+
+    </div>
 
 </div>
 

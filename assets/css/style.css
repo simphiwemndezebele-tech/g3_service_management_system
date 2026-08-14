@@ -562,3 +562,89 @@ box-shadow:none;
 .badge-danger{
     background:#dc3545;
 }
+/* =================================
+   ATTENTION REQUIRED
+================================= */
+
+.attention-section {
+    margin-top: 30px;
+    padding: 20px;
+}
+
+.attention-section h2 {
+    color: #003b73;
+    margin-bottom: 20px;
+}
+
+.attention-cards {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.attention-card {
+    flex: 1;
+    min-width: 250px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 20px;
+
+    background: white;
+
+    border-radius: 10px;
+
+    text-decoration: none;
+
+    color: #222;
+
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+    transition: 0.2s;
+}
+
+.attention-card:hover {
+    transform: translateY(-3px);
+
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.attention-icon {
+    font-size: 35px;
+
+    width: 60px;
+    height: 60px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f3f6fa;
+}
+
+.attention-info h3 {
+    margin: 0;
+
+    font-size: 16px;
+}
+
+.attention-info h1 {
+    margin: 5px 0;
+
+    font-size: 30px;
+
+    color: #003b73;
+}
+
+.attention-info p {
+    margin: 0;
+
+    font-size: 13px;
+
+    color: #777;
+}
