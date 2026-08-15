@@ -95,6 +95,12 @@ $company_name = $settings['company_name'] ?? 'G3 Systems';
             📊 Reports
         </a>
     </li>
+    
+    <li>
+    <a href="../users/index.php">
+    👥 Users
+    </a>
+    </li>
 
     <li>
         <a href="../settings/index.php">

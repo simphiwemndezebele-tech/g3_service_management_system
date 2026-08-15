@@ -125,6 +125,41 @@ ORDER BY jc.id DESC
 LIMIT 5
 
 ");
+// Technician Workload
+
+$technician_workload = mysqli_query($conn, "
+
+SELECT
+
+t.id,
+t.full_name,
+
+(
+    SELECT COUNT(*)
+    FROM service_requests sr
+    WHERE sr.technician_id = t.id
+    AND sr.status = 'Pending'
+) AS pending_requests,
+
+(
+    SELECT COUNT(*)
+    FROM service_requests sr
+    WHERE sr.technician_id = t.id
+    AND sr.status = 'In Progress'
+) AS progress_requests,
+
+(
+    SELECT COUNT(*)
+    FROM job_cards jc
+    WHERE jc.technician_id = t.id
+    AND jc.status IN ('Open', 'In Progress')
+) AS open_job_cards
+
+FROM technicians t
+
+ORDER BY t.full_name ASC
+
+");
 // Requests by Status
 $pending = mysqli_fetch_assoc(mysqli_query($conn,
 "SELECT COUNT(*) AS total FROM service_requests WHERE status='Pending'"));
@@ -370,6 +405,95 @@ No Job Cards Found.
 
 </div>
 <!-- ==============================
+     TECHNICIAN WORKLOAD
+================================ -->
+
+<?php if ($_SESSION['role'] === 'Manager'): ?>
+
+<div class="dashboard-box">
+
+    <h2>👨‍🔧 Technician Workload</h2>
+
+    <table>
+
+        <tr>
+            <th>Technician</th>
+            <th>🟡 Pending</th>
+            <th>🔵 In Progress</th>
+            <th>📋 Open Job Cards</th>
+            <th>📊 Total Active Work</th>
+        </tr>
+
+        <?php
+
+        if (mysqli_num_rows($technician_workload) > 0) {
+
+            while ($tech = mysqli_fetch_assoc($technician_workload)) {
+
+               $tech_pending = (int)$tech['pending_requests'];
+               $tech_progress = (int)$tech['progress_requests'];
+               $tech_open_cards = (int)$tech['open_job_cards'];
+
+            $total_active =
+               $tech_pending +
+               $tech_progress +
+               $tech_open_cards;
+        ?>
+
+        <tr>
+
+            <td>
+                <strong>
+                    <?php echo htmlspecialchars($tech['full_name']); ?>
+                </strong>
+            </td>
+
+            <td>
+                <?php echo $tech_pending; ?>
+            </td>
+
+            <td>
+                <?php echo $tech_progress; ?>
+            </td>
+
+            <td>
+                <?php echo $tech_open_cards; ?>
+            </td>
+
+            <td>
+                <strong>
+                    <?php echo $total_active; ?>
+                </strong>
+            </td>
+
+        </tr>
+
+        <?php
+
+            }
+
+        } else {
+
+        ?>
+
+        <tr>
+
+            <td colspan="5" style="text-align:center;">
+
+                No Technician Workload Found.
+
+            </td>
+
+        </tr>
+
+        <?php } ?>
+
+    </table>
+
+</div>
+<?php endif; ?>
+
+<!-- ==============================
      ATTENTION REQUIRED
 ================================ -->
 
@@ -436,7 +560,7 @@ No Job Cards Found.
 
         <!-- Open Job Cards -->
 
-        <a href="../job_cards/view_job_cards.php"
+        <a href="../job_cards/view_job_cards.php?status=open"
            class="attention-card">
 
             <div class="attention-icon">
@@ -489,74 +613,131 @@ No Job Cards Found.
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+// ==============================
+// System Overview Doughnut Chart
+// ==============================
+
+const overviewCanvas = document.getElementById('overviewChart');
+
+if (overviewCanvas) {
+
+    new Chart(overviewCanvas, {
+
+        type: 'doughnut',
+
+        data: {
+
+            labels: [
+                'Customers',
+                'Machines',
+                'Technicians',
+                'Requests'
+            ],
+
+            datasets: [{
+
+                data: [
+                    <?php echo (int)$total_customers['total']; ?>,
+                    <?php echo (int)$total_machines['total']; ?>,
+                    <?php echo (int)$total_technicians['total']; ?>,
+                    <?php echo (int)$total_requests['total']; ?>
+                ]
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            plugins: {
+
+                legend: {
+                    position: 'bottom'
+                }
+
+            }
+
+        }
+
+    });
+
+}
+
+
+// ==============================
+// Service Requests Bar Chart
+// ==============================
+
+const requestCanvas = document.getElementById('requestChart');
+
+if (requestCanvas) {
+
+    new Chart(requestCanvas, {
+
+        type: 'bar',
+
+        data: {
+
+            labels: [
+                'Pending',
+                'In Progress',
+                'Completed'
+            ],
+
+            datasets: [{
+
+                label: 'Requests',
+
+                data: [
+                    <?php echo (int)$pending['total']; ?>,
+                    <?php echo (int)$progress['total']; ?>,
+                    <?php echo (int)$completed['total']; ?>
+                ],
+
+                borderWidth: 1
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            scales: {
+
+                y: {
+                    beginAtZero: true
+                }
+
+            },
+
+            plugins: {
+
+                legend: {
+                    display: false
+                }
+
+            }
+
+        }
+
+    });
+
+}
+
+</script>
+
 <?php
 include("../includes/footer.php");
 ?>
-<script>
-
-// Doughnut Chart
-new Chart(document.getElementById('overviewChart'),{
-
-    type:'doughnut',
-
-    data:{
-        labels:['Customers','Machines','Technicians','Requests'],
-        datasets:[{
-            data:[
-                <?php echo $total_customers['total']; ?>,
-                <?php echo $total_machines['total']; ?>,
-                <?php echo $total_technicians['total']; ?>,
-                <?php echo $total_requests['total']; ?>
-            ]
-        }]
-    },
-
-    options:{
-        responsive:true,
-        maintainAspectRatio:false,
-        plugins:{
-            legend:{
-                position:'bottom'
-            }
-        }
-    }
-
-});
-
-// Bar Chart
-
-new Chart(document.getElementById('requestChart'),{
-
-    type:'bar',
-
-    data:{
-        labels:['Pending','In Progress','Completed'],
-        datasets:[{
-            label:'Requests',
-            data:[
-                <?php echo $pending['total']; ?>,
-                <?php echo $progress['total']; ?>,
-                <?php echo $completed['total']; ?>
-            ],
-            borderWidth:1
-        }]
-    },
-
-    options:{
-        responsive:true,
-        maintainAspectRatio:false,
-        scales:{
-            y:{
-                beginAtZero:true
-            }
-        },
-        plugins:{
-            legend:{
-                display:false
-            }
-        }
-    }
-
-});
-
-</script>

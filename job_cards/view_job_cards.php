@@ -14,12 +14,40 @@ include("../includes/header.php");
 include("../includes/sidebar.php");
 include("../includes/status_badge.php");
 
-/* Search */
+
+/* ==============================
+   Search
+   ============================== */
 
 $search = "";
 
-if(isset($_GET['search'])){
-    $search = mysqli_real_escape_string($conn,$_GET['search']);
+if (isset($_GET['search'])) {
+    $search = mysqli_real_escape_string(
+        $conn,
+        $_GET['search']
+    );
+}
+
+
+/* ==============================
+   Status Filter
+   ============================== */
+
+$status = "";
+
+$allowed_statuses = [
+    'Open',
+    'In Progress',
+    'Completed',
+    'open'
+];
+
+if (isset($_GET['status']) && in_array($_GET['status'], $allowed_statuses)) {
+
+    $status = mysqli_real_escape_string(
+        $conn,
+        $_GET['status']
+    );
 }
 
 /* ==============================
@@ -54,6 +82,31 @@ WHERE
 )
 ";
 
+
+/* ==============================
+   Status Filter
+   ============================== */
+
+if ($status !== "") {
+
+    if ($status === 'open') {
+
+        // Open Job Cards = Open + In Progress
+        $sql .= "
+            AND job_cards.status IN ('Open', 'In Progress')
+        ";
+
+    } else {
+
+        $sql .= "
+            AND job_cards.status = '$status'
+        ";
+
+    }
+
+}
+
+
 /* ==============================
    Technician Security
    ============================== */
@@ -67,16 +120,21 @@ if ($_SESSION['role'] === 'Technician') {
     ";
 }
 
+
 /* ==============================
    Final Ordering
    ============================== */
 
 $sql .= " ORDER BY job_cards.id DESC";
 
+
 $result = mysqli_query($conn, $sql);
 
+
 if (!$result) {
+
     die("Database error: " . mysqli_error($conn));
+
 }
 
 ?>
@@ -87,73 +145,192 @@ if (!$result) {
 
 <p>Manage all generated Job Cards.</p>
 
+
+<!-- ==============================
+     Search
+     ============================== -->
+
 <form method="GET">
 
 <input
 type="text"
 name="search"
 placeholder="Search Job Card..."
-value="<?php echo htmlspecialchars($search); ?>">
+value="<?php echo htmlspecialchars($search); ?>"
+>
+
+
+<!-- Keep status filter when searching -->
+
+<?php if ($status !== "") { ?>
+
+<input
+type="hidden"
+name="status"
+value="<?php echo htmlspecialchars($status); ?>"
+>
+
+<?php } ?>
+
 
 <br><br>
 
 <button class="btn btn-search">
-
 🔍 Search
-
 </button>
+
+
+<?php if ($status !== "") { ?>
+
+<a href="view_job_cards.php" class="btn btn-add">
+Clear Filter
+</a>
+
+<?php } ?>
 
 </form>
 
-<br>
-<table>
 
-    <tr>
-        <th>Job Card No.</th>
-        <th>Customer</th>
-        <th>Asset No.</th>
-        <th>Machine Model</th>
-        <th>Technician</th>
-        <th>Status</th>
-        <th>Date Created</th>
-        <th>Actions</th>
-    </tr>
+<br>
+
+
+<!-- ==============================
+     Status Filter Buttons
+     ============================== -->
+
+<div style="margin-bottom:20px;">
+
+<a
+href="view_job_cards.php"
+class="btn btn-add">
+📋 All Job Cards
+</a>
+
+<a
+href="view_job_cards.php?status=Open"
+class="btn btn-add">
+🟠 Open
+</a>
+
+<a
+href="view_job_cards.php?status=In+Progress"
+class="btn btn-add">
+🔵 In Progress
+</a>
+
+<a
+href="view_job_cards.php?status=Completed"
+class="btn btn-add">
+🟢 Completed
+</a>
+
+</div>
+
+
+<?php if ($status !== "") { ?>
+
+<p>
+
+<strong>
+
+Showing:
 
 <?php
 
-if(mysqli_num_rows($result) > 0){
+if ($status === 'open') {
 
-while($row = mysqli_fetch_assoc($result)){
+    echo "Open & In Progress";
+
+} else {
+
+    echo htmlspecialchars($status);
+
+}
+
+?>
+
+Job Cards
+
+</strong>
+
+</p>
+
+<?php } ?>
+
+
+<table>
+
+<tr>
+
+<th>Job Card No.</th>
+
+<th>Customer</th>
+
+<th>Asset No.</th>
+
+<th>Machine Model</th>
+
+<th>Technician</th>
+
+<th>Status</th>
+
+<th>Date Created</th>
+
+<th>Actions</th>
+
+</tr>
+
+
+<?php
+
+if (mysqli_num_rows($result) > 0) {
+
+    while ($row = mysqli_fetch_assoc($result)) {
 
 ?>
 
 <tr>
 
-<td><?php echo $row['job_card_number']; ?></td>
+<td>
+<?php echo htmlspecialchars($row['job_card_number']); ?>
+</td>
 
-<td><?php echo $row['customer_name']; ?></td>
 
-<td><?php echo $row['asset_number']; ?></td>
+<td>
+<?php echo htmlspecialchars($row['customer_name']); ?>
+</td>
 
-<td><?php echo $row['machine_model']; ?></td>
 
-<td><?php echo $row['technician_name']; ?></td>
+<td>
+<?php echo htmlspecialchars($row['asset_number']); ?>
+</td>
+
+
+<td>
+<?php echo htmlspecialchars($row['machine_model']); ?>
+</td>
+
+
+<td>
+<?php echo htmlspecialchars($row['technician_name']); ?>
+</td>
+
 
 <td>
 
 <?php
 
-if($row['status']=="Open"){
+if ($row['status'] == "Open") {
 
-echo "<span style='color:orange;font-weight:bold;'>🟠 Open</span>";
+    echo "<span style='color:orange;font-weight:bold;'>🟠 Open</span>";
 
-}elseif($row['status']=="In Progress"){
+} elseif ($row['status'] == "In Progress") {
 
-echo "<span style='color:blue;font-weight:bold;'>🔵 In Progress</span>";
+    echo "<span style='color:blue;font-weight:bold;'>🔵 In Progress</span>";
 
-}else{
+} else {
 
-echo "<span style='color:green;font-weight:bold;'>🟢 Completed</span>";
+    echo "<span style='color:green;font-weight:bold;'>🟢 Completed</span>";
 
 }
 
@@ -161,27 +338,35 @@ echo "<span style='color:green;font-weight:bold;'>🟢 Completed</span>";
 
 </td>
 
-<td><?php echo $row['created_at']; ?></td>
 
 <td>
-<a href="edit_job_card.php?id=<?php echo $row['id']; ?>"
+<?php echo htmlspecialchars($row['created_at']); ?>
+</td>
+
+
+<td>
+
+<a
+href="edit_job_card.php?id=<?php echo $row['id']; ?>"
 class="btn btn-edit">
-✏️Edit
+
+✏️ Edit
+
 </a>
 
 
 <?php if ($_SESSION['role'] === 'Manager') { ?>
 
-<a href="delete_job_card.php?id=<?php echo $row['id']; ?>"
+<a
+href="delete_job_card.php?id=<?php echo $row['id']; ?>"
 class="btn btn-delete"
-onclick="return confirm('Delete this Job Card?');">🗑️
-Delete
+onclick="return confirm('Delete this Job Card?');">
+
+🗑️ Delete
+
 </a>
 
-<td>
 <?php } ?>
-
-</td>
 
 </td>
 
@@ -189,9 +374,9 @@ Delete
 
 <?php
 
-}
+    }
 
-}else{
+} else {
 
 ?>
 
@@ -214,5 +399,6 @@ No Job Cards Found.
 </table>
 
 </div>
+
 
 <?php include("../includes/footer.php"); ?>
