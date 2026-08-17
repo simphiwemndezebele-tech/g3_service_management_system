@@ -126,6 +126,15 @@ value="<?php echo htmlspecialchars($search); ?>">
 🖨 Print Report
 </a>
 
+<a
+href="export_job_cards.php?search=<?php echo urlencode($search); ?>"
+class="btn btn-add">
+
+📊 Export Excel
+
+</a>
+
+
 </form>
 
 <table>

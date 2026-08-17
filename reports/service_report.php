@@ -139,6 +139,16 @@ value="<?php echo htmlspecialchars($search); ?>">
 
 </a>
 
+<a
+href="export_service_requests.php?search=<?php echo urlencode($search); ?>"
+class="btn btn-add">
+
+📊 Export Excel
+
+</a>
+
+
+
 </form>
 
 <table>

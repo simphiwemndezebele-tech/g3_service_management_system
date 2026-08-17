@@ -117,8 +117,14 @@ value="<?php echo htmlspecialchars($search); ?>">
 </button>
 
 <a href="#" onclick="window.print()" class="btn btn-add">
-
 🖨 Print Report
+</a>
+
+<a
+href="export_technicians.php?search=<?php echo urlencode($search); ?>"
+class="btn btn-add">
+
+📊 Export Excel
 
 </a>
 
