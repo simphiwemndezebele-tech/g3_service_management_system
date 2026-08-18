@@ -106,10 +106,15 @@ value="<?php echo htmlspecialchars($search); ?>">
 </a>
 
 <a
-href="export_customer_excel.php?search=<?php echo urlencode($search); ?>"
+href="../exports/export_customer_excel.php?search=<?php echo urlencode($search); ?>"
 class="btn btn-add"
 >
 📊 Export Excel
+</a>
+
+<a href="../exports/customer_pdf.php?search=<?php echo urlencode($search); ?>" 
+   class="btn btn-add">
+    📄 Export PDF
 </a>
 
 </form>

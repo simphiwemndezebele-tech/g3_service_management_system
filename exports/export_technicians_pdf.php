@@ -1,0 +1,564 @@
+<?php
+
+session_start();
+
+require_once("../includes/permissions.php");
+requireRole(['Manager']);
+
+if (!isset($_SESSION['username'])) {
+    header("Location: ../auth/login.php");
+    exit();
+}
+
+require_once("../config/db.php");
+require_once("../vendor/autoload.php");
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
+
+
+/* =====================================================
+   COMPANY SETTINGS
+===================================================== */
+
+$settings_result = mysqli_query(
+    $conn,
+    "SELECT * FROM settings WHERE id=1"
+);
+
+$settings = mysqli_fetch_assoc($settings_result);
+
+$company_name = $settings['company_name'] ?? "G3 Systems";
+$company_phone = $settings['company_phone'] ?? "";
+$company_email = $settings['company_email'] ?? "";
+$company_address = $settings['company_address'] ?? "";
+
+
+/* =====================================================
+   COMPANY LOGO
+===================================================== */
+
+$logo_path = __DIR__ . "/../assets/images/logo.png";
+
+$logo_base64 = "";
+
+if (file_exists($logo_path)) {
+
+    $logo_data = file_get_contents($logo_path);
+
+    $logo_base64 = 'data:image/png;base64,' .
+        base64_encode($logo_data);
+}
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+$search = "";
+
+if (isset($_GET['search'])) {
+
+    $search = mysqli_real_escape_string(
+        $conn,
+        $_GET['search']
+    );
+}
+
+
+/* =====================================================
+   TECHNICIERS
+===================================================== */
+
+$sql = "SELECT *
+        FROM technicians
+        WHERE
+            full_name LIKE '%$search%'
+            OR phone LIKE '%$search%'
+            OR email LIKE '%$search%'
+            OR specialization LIKE '%$search%'
+            OR status LIKE '%$search%'
+        ORDER BY full_name ASC";
+
+$result = mysqli_query($conn, $sql);
+
+
+/* =====================================================
+   TOTAL TECHNICIANS
+===================================================== */
+
+$total_query = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) AS total FROM technicians"
+);
+
+$totalTechnicians = mysqli_fetch_assoc($total_query);
+
+
+/* =====================================================
+   HTML FOR PDF
+===================================================== */
+
+$html = '
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<style>
+
+@page {
+    margin: 35px 30px;
+}
+
+body {
+
+    font-family: DejaVu Sans, sans-serif;
+
+    font-size: 10px;
+
+    color: #222;
+
+}
+
+.company-header {
+
+    text-align: center;
+
+    margin-bottom: 15px;
+
+}
+
+.logo {
+
+    width: 90px;
+
+    height: auto;
+
+    margin-bottom: 5px;
+
+}
+
+.company-name {
+
+    font-size: 20px;
+
+    font-weight: bold;
+
+    margin: 3px 0;
+
+}
+
+.system-name {
+
+    font-size: 14px;
+
+    margin: 3px 0;
+
+}
+
+.company-info {
+
+    font-size: 10px;
+
+    margin: 2px 0;
+
+}
+
+.header-line {
+
+    border: 0;
+
+    border-top: 1px solid #333;
+
+    margin-top: 12px;
+
+}
+
+.report-title {
+
+    text-align: center;
+
+    margin-top: 18px;
+
+    margin-bottom: 15px;
+
+}
+
+.report-title h2 {
+
+    font-size: 18px;
+
+    margin-bottom: 5px;
+
+}
+
+.report-info {
+
+    text-align: center;
+
+    font-size: 10px;
+
+}
+
+.summary {
+
+    border: 1px solid #999;
+
+    padding: 8px;
+
+    margin-bottom: 15px;
+
+}
+
+table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    margin-top: 10px;
+
+}
+
+th {
+
+    background-color: #eaeaea;
+
+    font-weight: bold;
+
+}
+
+th, td {
+
+    border: 1px solid #777;
+
+    padding: 6px;
+
+    text-align: left;
+
+}
+
+.footer {
+
+    margin-top: 25px;
+
+    text-align: center;
+
+    font-size: 8px;
+
+    color: #666;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<div class="company-header">
+';
+
+
+/* =====================================================
+   LOGO
+===================================================== */
+
+if ($logo_base64 != "") {
+
+    $html .= '
+
+    <img
+        src="' . $logo_base64 . '"
+        class="logo"
+    >
+
+    ';
+
+}
+
+
+/* =====================================================
+   COMPANY DETAILS
+===================================================== */
+
+$html .= '
+
+<div class="company-name">
+    ' . htmlspecialchars($company_name) . '
+</div>
+
+<div class="system-name">
+    Service Management System
+</div>
+';
+
+
+if ($company_phone != "") {
+
+    $html .= '
+
+    <div class="company-info">
+        📞 ' . htmlspecialchars($company_phone) . '
+    </div>
+
+    ';
+
+}
+
+
+if ($company_email != "") {
+
+    $html .= '
+
+    <div class="company-info">
+        ✉ ' . htmlspecialchars($company_email) . '
+    </div>
+
+    ';
+
+}
+
+
+if ($company_address != "") {
+
+    $html .= '
+
+    <div class="company-info">
+        📍 ' . htmlspecialchars($company_address) . '
+    </div>
+
+    ';
+
+}
+
+
+$html .= '
+
+<hr class="header-line">
+
+</div>
+
+
+<div class="report-title">
+
+<h2>Technician Report</h2>
+
+<div class="report-info">
+
+<strong>Generated On:</strong>
+' . date("d F Y h:i A") . '
+
+<br>
+
+<strong>Generated By:</strong>
+' . htmlspecialchars($_SESSION['full_name']) . '
+
+</div>
+
+</div>
+
+
+<div class="summary">
+
+<strong>Total Technicians:</strong>
+' . (int)$totalTechnicians['total'] . '
+';
+
+
+if ($search != "") {
+
+    $html .= '
+
+    <br>
+
+    <strong>Search Filter:</strong>
+    ' . htmlspecialchars($search) . '
+
+    ';
+
+}
+
+
+$html .= '
+
+</div>
+
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+
+<th>Full Name</th>
+
+<th>Phone</th>
+
+<th>Email</th>
+
+<th>Specialization</th>
+
+<th>Status</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+';
+
+
+/* =====================================================
+   TECHNICIAN DATA
+===================================================== */
+
+if ($result && mysqli_num_rows($result) > 0) {
+
+    while ($row = mysqli_fetch_assoc($result)) {
+
+        $html .= '
+
+        <tr>
+
+        <td>
+            ' . htmlspecialchars($row['id']) . '
+        </td>
+
+        <td>
+            ' . htmlspecialchars($row['full_name']) . '
+        </td>
+
+        <td>
+            ' . htmlspecialchars($row['phone']) . '
+        </td>
+
+        <td>
+            ' . htmlspecialchars($row['email']) . '
+        </td>
+
+        <td>
+            ' . htmlspecialchars($row['specialization']) . '
+        </td>
+
+        <td>
+            ' . htmlspecialchars($row['status']) . '
+        </td>
+
+        </tr>
+
+        ';
+
+    }
+
+} else {
+
+    $html .= '
+
+    <tr>
+
+        <td colspan="6" style="text-align:center;">
+
+            No Technicians Found.
+
+        </td>
+
+    </tr>
+
+    ';
+
+}
+
+
+$html .= '
+
+</tbody>
+
+</table>
+
+
+<div class="footer">
+
+' . htmlspecialchars($company_name) . '
+- Technician Report
+
+</div>
+
+
+</body>
+
+</html>
+';
+
+
+/* =====================================================
+   DOMPDF CONFIGURATION
+===================================================== */
+
+$options = new Options();
+
+$options->set(
+    'isRemoteEnabled',
+    true
+);
+
+$options->set(
+    'isHtml5ParserEnabled',
+    true
+);
+
+$options->set(
+    'defaultFont',
+    'DejaVu Sans'
+);
+
+
+$dompdf = new Dompdf($options);
+
+
+/* =====================================================
+   LOAD HTML
+===================================================== */
+
+$dompdf->loadHtml($html);
+
+
+/* =====================================================
+   PAPER
+===================================================== */
+
+$dompdf->setPaper(
+    'A4',
+    'landscape'
+);
+
+
+/* =====================================================
+   GENERATE PDF
+===================================================== */
+
+$dompdf->render();
+
+
+/* =====================================================
+   DOWNLOAD PDF
+===================================================== */
+
+$dompdf->stream(
+    "Technician_Report.pdf",
+    [
+        "Attachment" => true
+    ]
+);
+
+exit();
+
+?>

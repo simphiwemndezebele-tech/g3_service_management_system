@@ -127,10 +127,18 @@ value="<?php echo htmlspecialchars($search); ?>">
 </a>
 
 <a
-href="export_job_cards.php?search=<?php echo urlencode($search); ?>"
+href="../exports/export_job_cards.php?search=<?php echo urlencode($search); ?>"
 class="btn btn-add">
 
 📊 Export Excel
+
+</a>
+
+<a
+href="../exports/export_job_card_pdf.php?search=<?php echo urlencode($search); ?>"
+class="btn btn-add">
+
+📄 Export PDF
 
 </a>
 
