@@ -4,7 +4,6 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 
-
 /* ==============================
    Load Company Settings
    ============================== */
@@ -19,6 +18,34 @@ $settings_result = mysqli_query(
 $settings = mysqli_fetch_assoc($settings_result);
 
 $company_name = $settings['company_name'] ?? 'G3 Systems';
+
+/* ==============================
+   Notification Count
+   ============================== */
+
+$user_id = $_SESSION['user_id'] ?? 0;
+
+$unread_notifications = 0;
+
+if ($user_id > 0) {
+
+    $notification_query = mysqli_query(
+        $conn,
+        "SELECT COUNT(*) AS total
+         FROM notifications
+         WHERE user_id = $user_id
+         AND is_read = 0"
+    );
+
+    if ($notification_query) {
+
+        $notification_data = mysqli_fetch_assoc(
+            $notification_query
+        );
+
+        $unread_notifications = $notification_data['total'] ?? 0;
+    }
+}
 
 ?>
 
@@ -47,10 +74,35 @@ $company_name = $settings['company_name'] ?? 'G3 Systems';
         Welcome,
 
         <strong>
-            <?php echo htmlspecialchars($_SESSION['full_name']); ?>
+            <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'User'); ?>
         </strong>
 
-        (<?php echo htmlspecialchars($_SESSION['role']); ?>)
+        (<?php echo htmlspecialchars($_SESSION['role'] ?? ''); ?>)
+
+    </div>
+
+
+    <!-- ==============================
+         Notification Bell
+         ============================== -->
+
+    <div class="notification-area">
+
+        <a href="../notifications/index.php" class="notification-bell">
+
+            🔔
+
+            <?php if ($unread_notifications > 0): ?>
+
+                <span class="notification-count">
+
+                    <?php echo $unread_notifications; ?>
+
+                </span>
+
+            <?php endif; ?>
+
+        </a>
 
     </div>
 

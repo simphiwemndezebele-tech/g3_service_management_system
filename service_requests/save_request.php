@@ -5,6 +5,8 @@ require_once("../includes/permissions.php");
 requireRole(['Manager', 'Reception', 'Technician']);
 
 include("../config/db.php");
+require_once("../includes/notification_functions.php");
+require_once("../includes/email_functions.php");
 
 // Receive Form Data
 $customer_id = $_POST['customer_id'];
@@ -40,9 +42,11 @@ if ($_SESSION['role'] === 'Technician') {
 
     }
 }
+
 $issue_description = $_POST['issue_description'];
 $priority = $_POST['priority'];
 $status = $_POST['status'];
+
 
 // ==============================
 // Generate Service Request Number
@@ -59,7 +63,7 @@ $query = mysqli_query($conn, "
     LIMIT 1
 ");
 
-if(mysqli_num_rows($query) > 0){
+if (mysqli_num_rows($query) > 0) {
 
     $row = mysqli_fetch_assoc($query);
 
@@ -67,13 +71,14 @@ if(mysqli_num_rows($query) > 0){
 
     $next_number = $last_number + 1;
 
-}else{
+} else {
 
     $next_number = 1;
 
 }
 
-$request_number = "SR-" . $year . "-" . str_pad($next_number,4,"0",STR_PAD_LEFT);
+$request_number = "SR-" . $year . "-" . str_pad($next_number, 4, "0", STR_PAD_LEFT);
+
 
 // ==============================
 // Save Request
@@ -92,26 +97,148 @@ status
 VALUES
 (?,?,?,?,?,?,?)";
 
-$stmt = mysqli_prepare($conn,$sql);
+$stmt = mysqli_prepare($conn, $sql);
 
 mysqli_stmt_bind_param(
-$stmt,
-"siiisss",
-$request_number,
-$customer_id,
-$machine_id,
-$technician_id,
-$issue_description,
-$priority,
-$status
+    $stmt,
+    "siiisss",
+    $request_number,
+    $customer_id,
+    $machine_id,
+    $technician_id,
+    $issue_description,
+    $priority,
+    $status
 );
 
-if(mysqli_stmt_execute($stmt)){
 
-    header("Location:view_requests.php");
+if (mysqli_stmt_execute($stmt)) {
+
+    // ==========================================
+    // Find the user account of assigned technician
+    // ==========================================
+
+    $tech_user_stmt = mysqli_prepare(
+        $conn,
+        "SELECT user_id
+         FROM technicians
+         WHERE id = ?"
+    );
+
+    mysqli_stmt_bind_param(
+        $tech_user_stmt,
+        "i",
+        $technician_id
+    );
+
+    mysqli_stmt_execute($tech_user_stmt);
+
+    $tech_user_result = mysqli_stmt_get_result($tech_user_stmt);
+
+    if ($tech_user = mysqli_fetch_assoc($tech_user_result)) {
+
+        $technician_user_id = $tech_user['user_id'];
+
+        // ==========================================
+        // Create Notification
+        // ==========================================
+
+if (!empty($technician_user_id)) {
+
+    /*
+    |--------------------------------------------------------------------------
+    | In-System Notification
+    |--------------------------------------------------------------------------
+    */
+
+    createNotification(
+        $conn,
+        $technician_user_id,
+        "New Service Request",
+        "Service request " . $request_number . " has been assigned to you.",
+        "info",
+        mysqli_insert_id($conn)
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get Technician Email
+    |--------------------------------------------------------------------------
+    */
+
+    $email_stmt = mysqli_prepare(
+        $conn,
+        "SELECT full_name, email
+         FROM technicians
+         WHERE id = ?"
+    );
+
+    mysqli_stmt_bind_param(
+        $email_stmt,
+        "i",
+        $technician_id
+    );
+
+    mysqli_stmt_execute($email_stmt);
+
+    $email_result = mysqli_stmt_get_result($email_stmt);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Send Email Notification
+    |--------------------------------------------------------------------------
+    */
+
+    if ($technician = mysqli_fetch_assoc($email_result)) {
+
+        if (!empty($technician['email'])) {
+
+            $email_subject = "New Service Request - " . $request_number;
+
+            $email_message = "
+Hello " . $technician['full_name'] . ",
+
+A new service request has been assigned to you.
+
+Service Request: " . $request_number . "
+
+Priority: " . $priority . "
+
+Status: " . $status . "
+
+Issue Description:
+" . $issue_description . "
+
+Please log in to the G3 Systems Service Management System
+to view the full service request and take the necessary action.
+
+Regards,
+G3 Systems
+Service Management System
+";
+
+
+            sendEmail(
+                $technician['email'],
+                $technician['full_name'],
+                $email_subject,
+                $email_message
+            );
+        }
+    }
+}
+    }
+
+    // ==========================================
+    // Return to Service Requests
+    // ==========================================
+
+    header("Location: view_requests.php");
     exit();
 
-}else{
+} else {
 
     echo "Error: " . mysqli_error($conn);
 
