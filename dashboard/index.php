@@ -11,6 +11,11 @@ include("../includes/header.php");
 include("../includes/sidebar.php");
 include("../includes/status_badge.php");
 
+require_once("../includes/overdue_notifications.php");
+
+// Process overdue service requests
+processOverdueServiceRequests($conn);
+
 // Customers
 $total_customers = mysqli_fetch_assoc(
     mysqli_query($conn, "SELECT COUNT(*) AS total FROM customers")
