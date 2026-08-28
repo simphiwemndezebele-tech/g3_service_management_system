@@ -162,26 +162,89 @@ if ($_SESSION['role'] === 'Technician') {
 
 
 // ==================================================
+// Technician Status Security
+// ==================================================
+
+if ($_SESSION['role'] === 'Technician') {
+
+    /*
+     * Technicians may move jobs forward only:
+     *
+     * Open → In Progress
+     * In Progress → Completed
+     *
+     * Completed → anything else is NOT allowed.
+     */
+
+    if ($old_status === 'Completed' && $status !== 'Completed') {
+
+        echo "
+        <script>
+            alert('A completed Job Card cannot be reopened.');
+            window.location='edit_job_card.php?id=$id';
+        </script>
+        ";
+
+        exit();
+    }
+
+
+    /*
+     * Prevent technicians from skipping
+     * directly from Open → Completed.
+     */
+
+    if ($old_status === 'Open' && $status === 'Completed') {
+
+        echo "
+        <script>
+            alert('A Job Card must be In Progress before it can be Completed.');
+            window.location='edit_job_card.php?id=$id';
+        </script>
+        ";
+
+        exit();
+    }
+
+}
+
+
+// ==================================================
 // Update Job Card
 // ==================================================
 
 $stmt = mysqli_prepare(
+
     $conn,
+
     "UPDATE job_cards
+
      SET
+
         work_done = ?,
+
         remarks = ?,
+
         status = ?
+
      WHERE id = ?"
+
 );
 
 mysqli_stmt_bind_param(
+
     $stmt,
+
     "sssi",
+
     $work_done,
+
     $remarks,
+
     $status,
+
     $id
+
 );
 
 

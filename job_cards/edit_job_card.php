@@ -125,20 +125,54 @@ rows="5"><?php echo htmlspecialchars($row['remarks']); ?></textarea>
 
 <select name="status">
 
-<option value="Open"
-<?php if($row['status']=="Open") echo "selected"; ?>>
-Open
-</option>
+<?php if ($_SESSION['role'] === 'Manager'): ?>
 
-<option value="In Progress"
-<?php if($row['status']=="In Progress") echo "selected"; ?>>
-In Progress
-</option>
+    <option value="Open"
+    <?php if ($row['status'] === 'Open') echo 'selected'; ?>>
+        Open
+    </option>
 
-<option value="Completed"
-<?php if($row['status']=="Completed") echo "selected"; ?>>
-Completed
-</option>
+    <option value="In Progress"
+    <?php if ($row['status'] === 'In Progress') echo 'selected'; ?>>
+        In Progress
+    </option>
+
+    <option value="Completed"
+    <?php if ($row['status'] === 'Completed') echo 'selected'; ?>>
+        Completed
+    </option>
+
+<?php else: ?>
+
+    <?php if ($row['status'] === 'Open'): ?>
+
+        <option value="Open" selected>
+            Open
+        </option>
+
+        <option value="In Progress">
+            In Progress
+        </option>
+
+    <?php elseif ($row['status'] === 'In Progress'): ?>
+
+        <option value="In Progress" selected>
+            In Progress
+        </option>
+
+        <option value="Completed">
+            Completed
+        </option>
+
+    <?php else: ?>
+
+        <option value="Completed" selected>
+            Completed
+        </option>
+
+    <?php endif; ?>
+
+<?php endif; ?>
 
 </select>
 
