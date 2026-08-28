@@ -146,6 +146,36 @@ if ($status_filter !== "") {
 
 }
 
+/* ==============================
+   Priority Filter
+   ============================== */
+
+$priority_filter = "";
+
+if (isset($_GET['priority'])) {
+
+    $allowed_priorities = [
+        'High',
+        'Medium',
+        'Low'
+    ];
+
+    if (in_array($_GET['priority'], $allowed_priorities, true)) {
+
+        $priority_filter = mysqli_real_escape_string(
+            $conn,
+            $_GET['priority']
+        );
+
+    }
+
+}
+
+if ($priority_filter !== "") {
+
+    $sql .= " AND sr.priority = '$priority_filter'";
+
+}
 
 /* ==============================
    Aging Filter

@@ -347,6 +347,15 @@ if ($row['status'] == "Open") {
 <td>
 
 <a
+href="view_job_card.php?id=<?php echo $row['id']; ?>"
+class="btn btn-add">
+
+👁️ View
+
+</a>
+
+
+<a
 href="edit_job_card.php?id=<?php echo $row['id']; ?>"
 class="btn btn-edit">
 
