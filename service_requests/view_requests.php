@@ -362,9 +362,16 @@ class="btn btn-edit">
 
 </a>
 
-<a href="../job_cards/generate_job_card.php?id=<?php echo $row['id']; ?>" class="btn btn-add">
+<?php if ($_SESSION['role'] === 'Manager' || $_SESSION['role'] === 'Technician') { ?>
+
+<a
+    href="../job_cards/generate_job_card.php?id=<?php echo $row['id']; ?>"
+    class="btn btn-add"
+>
     📋 Generate
 </a>
+
+<?php } ?>
 
 <a
 href="delete_request.php?id=<?php echo $row['id'];?>"
