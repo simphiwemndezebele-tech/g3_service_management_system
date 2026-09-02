@@ -185,15 +185,127 @@ $technicians=mysqli_query($conn,"SELECT * FROM technicians ORDER BY full_name");
 
 <label>Status</label>
 
-<select name="status">
+<?php
 
-<option value="Pending" <?php if($request['status']=="Pending") echo "selected"; ?>>Pending</option>
+/* ==================================================
+   CHECK IF JOB CARD EXISTS
+================================================== */
 
-<option value="In Progress" <?php if($request['status']=="In Progress") echo "selected"; ?>>In Progress</option>
+$job_card_check = mysqli_prepare(
+    $conn,
+    "SELECT id, status
+     FROM job_cards
+     WHERE service_request_id = ?
+     LIMIT 1"
+);
 
-<option value="Completed" <?php if($request['status']=="Completed") echo "selected"; ?>>Completed</option>
+mysqli_stmt_bind_param(
+    $job_card_check,
+    "i",
+    $request['id']
+);
 
-</select>
+mysqli_stmt_execute($job_card_check);
+
+$job_card_result =
+    mysqli_stmt_get_result($job_card_check);
+
+$linked_job_card =
+    mysqli_fetch_assoc($job_card_result);
+
+?>
+
+
+<?php if ($linked_job_card): ?>
+
+    <!-- ==========================================
+         JOB CARD EXISTS
+         STATUS CONTROLLED BY JOB CARD
+    =========================================== -->
+
+    <?php
+
+    if ($linked_job_card['status'] === 'Open') {
+
+        $display_status = 'Pending';
+
+    } elseif ($linked_job_card['status'] === 'In Progress') {
+
+        $display_status = 'In Progress';
+
+    } else {
+
+        $display_status = 'Completed';
+
+    }
+
+    ?>
+
+    <input
+        type="text"
+        value="<?php echo htmlspecialchars($display_status); ?>"
+        readonly
+    >
+
+    <!-- Keep status for update_request.php -->
+
+    <input
+        type="hidden"
+        name="status"
+        value="<?php echo htmlspecialchars($display_status); ?>"
+    >
+
+    <small style="color:#777;">
+
+        🔒 Status is controlled by the linked Job Card.
+
+    </small>
+
+
+<?php else: ?>
+
+    <!-- ==========================================
+         NO JOB CARD
+         NORMAL STATUS CONTROL
+    =========================================== -->
+
+    <select name="status">
+
+        <option
+            value="Pending"
+            <?php
+            if ($request['status'] == "Pending")
+                echo "selected";
+            ?>
+        >
+            Pending
+        </option>
+
+
+        <option
+            value="In Progress"
+            <?php
+            if ($request['status'] == "In Progress")
+                echo "selected";
+            ?>
+        >
+            In Progress
+        </option>
+
+
+        <option
+            value="Completed"
+            <?php
+            if ($request['status'] == "Completed")
+                echo "selected";
+            ?>
+        >
+            Completed
+        </option>
+
+    </select>
+
+<?php endif; ?>
 
 <br><br>
 

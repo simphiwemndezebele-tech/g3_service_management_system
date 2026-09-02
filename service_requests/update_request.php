@@ -185,40 +185,112 @@ if ($_SESSION['role'] === 'Technician') {
 
 
 // ==============================
-// Update Service Request
+// Check Existing Job Card
 // ==============================
 
-$sql = "
-    UPDATE service_requests
-
-    SET
-        customer_id = ?,
-        machine_id = ?,
-        technician_id = ?,
-        issue_description = ?,
-        priority = ?,
-        status = ?
-
-    WHERE id = ?
-";
-
-$stmt = mysqli_prepare(
+$job_card_stmt = mysqli_prepare(
     $conn,
-    $sql
+    "SELECT id, status
+     FROM job_cards
+     WHERE service_request_id = ?
+     LIMIT 1"
 );
 
 mysqli_stmt_bind_param(
-    $stmt,
-    "iiisssi",
-    $customer_id,
-    $machine_id,
-    $technician_id,
-    $issue_description,
-    $priority,
-    $status,
+    $job_card_stmt,
+    "i",
     $id
 );
 
+mysqli_stmt_execute($job_card_stmt);
+
+$job_card_result = mysqli_stmt_get_result(
+    $job_card_stmt
+);
+
+
+// ==============================
+// Update Service Request
+// ==============================
+
+if (mysqli_num_rows($job_card_result) > 0) {
+
+    /*
+     * Job Card already exists.
+     *
+     * The Job Card controls the workflow status,
+     * so we do NOT allow the Service Request status
+     * to be changed independently.
+     */
+
+    $sql = "
+        UPDATE service_requests
+
+        SET
+            customer_id = ?,
+            machine_id = ?,
+            technician_id = ?,
+            issue_description = ?,
+            priority = ?
+
+        WHERE id = ?
+    ";
+
+    $stmt = mysqli_prepare(
+        $conn,
+        $sql
+    );
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        "iisssi",
+        $customer_id,
+        $machine_id,
+        $technician_id,
+        $issue_description,
+        $priority,
+        $id
+    );
+
+} else {
+
+    /*
+     * No Job Card exists yet.
+     * Service Request status can still be updated.
+     */
+
+    $sql = "
+        UPDATE service_requests
+
+        SET
+            customer_id = ?,
+            machine_id = ?,
+            technician_id = ?,
+            issue_description = ?,
+            priority = ?,
+            status = ?
+
+        WHERE id = ?
+    ";
+
+    $stmt = mysqli_prepare(
+        $conn,
+        $sql
+    );
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        "iiisssi",
+        $customer_id,
+        $machine_id,
+        $technician_id,
+        $issue_description,
+        $priority,
+        $status,
+        $id
+    );
+
+}
 
 // ==============================
 // Execute Update
@@ -226,6 +298,38 @@ mysqli_stmt_bind_param(
 
 if (mysqli_stmt_execute($stmt)) {
 
+    // ==================================================
+    // Update Linked Service Request Status
+    // ==================================================
+
+    $request_stmt = mysqli_prepare(
+        $conn,
+        "UPDATE service_requests
+         SET status = ?
+         WHERE id = (
+             SELECT service_request_id
+             FROM job_cards
+             WHERE id = ?
+         )"
+    );
+
+    $request_status = ($status === 'Open') ? 'Pending' : $status;
+
+    mysqli_stmt_bind_param(
+      $request_stmt,
+      "si",
+      $request_status,
+      $id
+);
+    mysqli_stmt_execute($request_stmt);
+    
+   // ==================================================
+   // Redirect After Successful Update
+   // ==================================================
+
+        header("Location: view_job_cards.php");
+        exit();
+}
 
     // ==================================================
     // 1. STATUS CHANGE NOTIFICATIONS
